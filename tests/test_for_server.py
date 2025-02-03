@@ -13,10 +13,12 @@ class TestServerFunction(unittest.TestCase):
         clients = {}
 
     async def test_check_unique_name(self):
-
         """Тест для проверки уникальности имени - если имя уникально, должно вернуться True"""
+
         mock_writer = MagicMock()  # создаем мок (заглушку), имитирующий объект writer
+
         result = await check_unique_name('new_client', clients, mock_writer)
+
         self.assertTrue(result)
 
     async def test_check_not_unique_name(self):
@@ -54,5 +56,5 @@ class TestServerFunction(unittest.TestCase):
         self.assertNotIn('client_1', clients)
 
 
-if __name__ == '__main':
+if __name__ == '__main__':
     unittest.main()
