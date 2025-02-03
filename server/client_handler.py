@@ -28,6 +28,38 @@ async def check_unique_name(name, clients, writer):
     return True  # имя уникально
 
 
+async def check_private_name(message, writer, name):
+    """Функция для обработки приватных сообщений"""
+
+    parts = message.split(' ', 1)  # делим приватное сообщение - на имя пользователя и само сообщение
+
+    # если количество частей строго больше 1, работаем с отправкой приватного сообщения,
+    # если нет - выводим предупреждение о невозможности отправить пустое сообщение
+    if len(parts) > 1:
+        private_user = parts[0][1:]  # извлекаем имя пользователя после '@'
+        private_message = parts[1]  # извлекаем сообщение
+
+        # если имя пользовател, указанное после @, совпадает с именем отправителя
+        # выводим предупреждение о невозможности отправить приватное сообщение себе
+        if private_user == name:
+            writer.write("Вы не можете отправить приватное сообщение себе.\n".encode())
+            await writer.drain()
+            return
+
+        # если пользователь есть среди подключенных клиентов - отправляем ему приватное сообщение,
+        # если нет - выводим предупреждение об отсутствиии такого пользователя среди подключенных клентов
+        if private_user in clients: # Проверка, существует ли такой пользователь в списке
+            private_writer = clients[private_user]
+            private_writer.write(f"(Приватное сообщение от {name}): {private_message}\n".encode())
+            await private_writer.drain()
+        else:
+            writer.write(f"Пользователь {private_user} не найден.\n".encode())
+            await writer.drain()
+    else:
+        writer.write("Вы не можете отправить пустое приватное сообщение.\n".encode())
+        await writer.drain()
+
+
 async def handle_client(reader, writer):
     """Функция обработки клиента: подключение, получение и отправка сообщений"""
 
@@ -56,6 +88,10 @@ async def handle_client(reader, writer):
                 # вызываем функцию обработки вызода клиента для оповещения пользователей и удаления клиента из словаря
                 await handle_exit(writer, name)
                 break  # выходим из цикла
+
+            if message.startswith('@'):  # если клиент начал сообщение с '@',
+                # вызываем функцию для обработки приватного сообщения
+                await check_private_name(message, writer, name)
             else:
                 print(f"[{name}]: {message}")  # выводим сообщение на сервере
                 await broadcast(f"[{name}]: {message}", exclude=writer)  # выводим сообщение всем подключенным клиентам

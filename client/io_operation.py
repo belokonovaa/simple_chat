@@ -22,16 +22,20 @@ async def write_messages(writer):
     while True:
         message = await asyncio.to_thread(input, '')  # ожидает сообщение от пользователя
 
-        if message.lower().strip() == 'exit':
-            writer.write(f"{message}\n".encode())  # если пользователь ввел "exit", отправляем сообщение о выходе
-            await writer.drain()  # ждем, пока сообщение не будет отправлено
-            print(f'Вы покинули чат.')  # сообщаем пользователю, что он вышел
-
-            break  # выходим из цикла
-
         # если пользователь хочет отправить пустое сообщение, выводим предупреждение
         if not message.strip():
             print('Вы не можете отправить пустое сообщение.')
+            continue
+
+        if message.lower().strip() == 'exit':  # если пользователь ввел "exit", отправляем сообщение о выходе
+            writer.write(f"{message}\n".encode())
+            await writer.drain()  # ждем, пока сообщение не будет отправлено
+            print(f'Вы покинули чат.')  # сообщаем пользователю, что он вышел
+            break  # выходим из цикла
+
+        if message.startswith('@'): # если пользователь начал сообщение с '@', отправляем приватное сообщение
+            writer.write(f"{message}\n".encode())
+            await writer.drain()
             continue
 
         else:
